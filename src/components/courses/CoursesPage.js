@@ -1,12 +1,19 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import * as courseAction from '../../redux/actions/courseAction';
+import { loadCourses, deleteCourses } from '../../redux/actions/courseAction';
 import * as authorAction from '../../redux/actions/authorAction';
 import { bindActionCreators } from 'redux';
 import CourseList from './CourseList';
+import { Redirect } from 'react-router-dom';
+import Spinner from '../common/Spinner';
 import PropTypes from 'prop-types';
+import { toast } from 'react-toastify';
 
 class CoursesPage extends Component {
+    state = {
+        redirectToAddCoursePage: false
+    };
+
     componentDidMount() {
         const { courses, authors, actions } = this.props;
         if (authors.length === 0) {
@@ -21,12 +28,23 @@ class CoursesPage extends Component {
         }
     }
 
+    handleDeleteCourse = course => {
+        toast.success("Course deleted");
+        this.props.actions.deleteCourses(course);
+    }
+
     render() {
         const { courses } = this.props;
         return (
             <>
+                {this.state.redirectToAddCoursePage && <Redirect to="/course" />}
                 <h2>Courses</h2>
-                <CourseList courses={courses}/>
+                {this.props.loading ? ( <Spinner /> ) : (
+                    <>
+                        <button style={{marginBottom: 20}} className="btn btn-primary add-course" onClick={() => this.setState({redirectToAddCoursePage: true})}>Add Course</button>
+                        <CourseList courses={courses} onDeleteClick={this.handleDeleteCourse}/>
+                    </>
+                )}
             </>
         )
     }
@@ -41,14 +59,16 @@ function mapStateToProps( state ) {
                 authorName: state.authors.find(a => a.id === course.authorId).name
             }
         }),
-        authors: state.authors
+        authors: state.authors,
+        loading: state.apiCallsInProgress > 0
     }
 }
 
 function mapDispatchToProps(dispatch){
     return {
         actions : {
-            loadCourses : bindActionCreators(courseAction.loadCourses, dispatch),
+            loadCourses : bindActionCreators(loadCourses, dispatch),
+            deleteCourses : bindActionCreators(deleteCourses, dispatch),
             loadAuthors : bindActionCreators(authorAction.loadAuthors, dispatch)
         }
     }
@@ -57,7 +77,8 @@ function mapDispatchToProps(dispatch){
 CoursesPage.propTypes = {
     courses: PropTypes.array.isRequired,
     authors: PropTypes.array.isRequired,
-    actions: PropTypes.object.isRequired
+    actions: PropTypes.object.isRequired,
+    loading: PropTypes.bool.isRequired
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(CoursesPage);
