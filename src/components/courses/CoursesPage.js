@@ -28,10 +28,14 @@ class CoursesPage extends Component {
         }
     }
 
-    handleDeleteCourse = course => {
+    handleDeleteCourse = async course => {
         toast.success("Course deleted");
-        this.props.actions.deleteCourses(course);
-    }
+        try {
+            await this.props.actions.deleteCourses(course);
+        } catch(error){
+            toast.error("Delete failed. " + error.message, {autoClose: false });
+        }
+    };
 
     render() {
         const { courses } = this.props;
